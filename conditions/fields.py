@@ -5,9 +5,11 @@
 """
 
 from django import forms
+from django.db.models import JSONField
+from django.forms import JSONField as JSONFormField
+from django.forms import Textarea
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-from jsonfield.fields import JSONField, JSONFormField, JSONWidget
 
 from .conditions import CompareCondition
 from .exceptions import InvalidConditionError
@@ -16,12 +18,10 @@ from .lists import CondList
 __all__ = ["ConditionsWidget", "ConditionsFormField", "ConditionsField"]
 
 
-class ConditionsWidget(JSONWidget):
-
-    # TODO: Use template_name and refactor widget to use Django 1.11's new get_context() method
-    # when Django 1.8-1.10 support is dropped
-    # https://docs.djangoproject.com/en/1.11/ref/forms/widgets/#django.forms.Widget.get_context
-    template_name_dj110_to_dj111_compat = "conditions/conditions_widget.html"
+class ConditionsWidget(Textarea):
+    template_name = (
+        "conditions/conditions_widget.html"  # Using the standard template_name
+    )
 
     def __init__(self, *args, **kwargs):
         self.condition_definitions = kwargs.pop("condition_definitions", {})
@@ -31,10 +31,10 @@ class ConditionsWidget(JSONWidget):
             kwargs["attrs"]["cols"] = 50
         super().__init__(*args, **kwargs)
 
-    def render(self, name, value, attrs=None, renderer=None):
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
         if isinstance(value, CondList):
             value = value.encode()
-        textarea = super().render(name, value, attrs)
 
         condition_groups = []
         for groupname, group in self.condition_definitions.items():
@@ -46,15 +46,21 @@ class ConditionsWidget(JSONWidget):
                         "key_required": "true" if condition.key_required() else "false",
                         "keys_allowed": condition.keys_allowed,
                         "key_example": condition.key_example(),
-                        "operator_required": "true"
-                        if issubclass(condition, CompareCondition)
-                        else "false",
-                        "operators": condition.operators().keys()
-                        if issubclass(condition, CompareCondition)
-                        else [],
-                        "operand_example": condition.operand_example()
-                        if issubclass(condition, CompareCondition)
-                        else "",
+                        "operator_required": (
+                            "true"
+                            if issubclass(condition, CompareCondition)
+                            else "false"
+                        ),
+                        "operators": (
+                            condition.operators().keys()
+                            if issubclass(condition, CompareCondition)
+                            else []
+                        ),
+                        "operand_example": (
+                            condition.operand_example()
+                            if issubclass(condition, CompareCondition)
+                            else ""
+                        ),
                         "help_text": condition.help_text(),
                         "description": condition.full_description(),
                     }
@@ -71,14 +77,12 @@ class ConditionsWidget(JSONWidget):
             )
         condition_groups = sorted(condition_groups, key=lambda x: x["groupname"])
 
-        context = {
-            "textarea": textarea,
-            "condition_groups": condition_groups,
-        }
+        context["condition_groups"] = condition_groups
+        return context
 
-        return mark_safe(
-            render_to_string(self.template_name_dj110_to_dj111_compat, context)
-        )
+    def render(self, name, value, attrs=None, renderer=None):
+        context = self.get_context(name, value, attrs)
+        return mark_safe(render_to_string(self.template_name, context))
 
 
 class ConditionsFormField(JSONFormField):
@@ -91,7 +95,7 @@ class ConditionsFormField(JSONFormField):
         super().__init__(*args, **kwargs)
 
     def clean(self, value):
-        """ Validate conditions by decoding result """
+        """Validate conditions by decoding result"""
         cleaned_json = super().clean(value)
         if cleaned_json is None:
             return
