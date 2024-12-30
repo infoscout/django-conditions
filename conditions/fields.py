@@ -97,6 +97,7 @@ class ConditionsFormField(JSONFormField):
             kwargs["widget"] = ConditionsWidget(
                 condition_definitions=self.condition_definitions
             )
+        kwargs.setdefault("initial", {"all": []})  # Set default initial value
         super().__init__(*args, **kwargs)
 
     def clean(self, value):
