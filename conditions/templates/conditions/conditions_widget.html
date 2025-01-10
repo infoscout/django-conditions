@@ -17,9 +17,9 @@
         'use strict'
 
         // Get locations of static content
-        staticloc_icon_plus = "{% static "conditions/img/icon-plus.png" %}";
-        staticloc_icon_minus = "{% static "conditions/img/icon-minus.png" %}";
-        staticloc_icon_information = "{% static "conditions/img/icon-information.png" %}";
+        staticloc_icon_plus = "{% static 'conditions/img/icon-plus.png' %}";
+        staticloc_icon_minus = "{% static 'conditions/img/icon-minus.png' %}";
+        staticloc_icon_information = "{% static 'conditions/img/icon-information.png' %}";
 
         // Get condition groups
         condition_groups = [
@@ -75,14 +75,14 @@
     <input type="text" placeholder="<%= placeholder %>" />
 </script>
 <script type="text/template" id="condition-selector-template">
-    <img id="condition-remove" src="{% static "conditions/img/icon-minus.png" %}" />
+    <img id="condition-remove" src="{% static 'conditions/img/icon-minus.png' %}" />
     <span id="condition-not"></span>
     <span id="condition-groups"></span>
     <span id="condstrs"></span>
     <span id="condition-key"></span>
     <span id="condition-operators"></span>
     <span id="condition-operand"></span>
-    <img id="condition-information" src="{% static "conditions/img/icon-information.png" %}" />
+    <img id="condition-information" src="{% static 'conditions/img/icon-information.png' %}" />
 </script>
 <script type="text/template" id="condition-selector-group-template">
     <div id="condition-selector">
@@ -91,9 +91,9 @@
             <option value="any"<% if (listtype == "any") { %> selected<% } %>>any</option>
         </select>
         <div id="condition-selector-group"></div>
-        <img id="condition-add" style="margin-left: 10px;" src="{% static "conditions/img/icon-plus.png" %}" />
+        <img id="condition-add" style="margin-left: 10px;" src="{% static 'conditions/img/icon-plus.png' %}" />
     </div>
 </script>
 
 <!-- Conditions Widget JS -->
-<script type="text/javascript" src="{% static "conditions/js/conditions_widget.js" %}"></script>
+<script type="text/javascript" src="{% static 'conditions/js/conditions_widget.js' %}"></script>
