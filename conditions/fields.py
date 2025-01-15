@@ -7,7 +7,10 @@
 from django import forms
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-from jsonfield.fields import JSONField, JSONFormField, JSONWidget
+
+from django.db.models import JSONField
+from django.forms import JSONField as JSONFormField
+from django.forms import Textarea
 
 from .conditions import CompareCondition
 from .exceptions import InvalidConditionError
@@ -16,7 +19,7 @@ from .lists import CondList
 __all__ = ["ConditionsWidget", "ConditionsFormField", "ConditionsField"]
 
 
-class ConditionsWidget(JSONWidget):
+class ConditionsWidget(Textarea):
 
     # TODO: Use template_name and refactor widget to use Django 1.11's new get_context() method
     # when Django 1.8-1.10 support is dropped
@@ -46,15 +49,21 @@ class ConditionsWidget(JSONWidget):
                         "key_required": "true" if condition.key_required() else "false",
                         "keys_allowed": condition.keys_allowed,
                         "key_example": condition.key_example(),
-                        "operator_required": "true"
-                        if issubclass(condition, CompareCondition)
-                        else "false",
-                        "operators": condition.operators().keys()
-                        if issubclass(condition, CompareCondition)
-                        else [],
-                        "operand_example": condition.operand_example()
-                        if issubclass(condition, CompareCondition)
-                        else "",
+                        "operator_required": (
+                            "true"
+                            if issubclass(condition, CompareCondition)
+                            else "false"
+                        ),
+                        "operators": (
+                            condition.operators().keys()
+                            if issubclass(condition, CompareCondition)
+                            else []
+                        ),
+                        "operand_example": (
+                            condition.operand_example()
+                            if issubclass(condition, CompareCondition)
+                            else ""
+                        ),
                         "help_text": condition.help_text(),
                         "description": condition.full_description(),
                     }
@@ -88,10 +97,11 @@ class ConditionsFormField(JSONFormField):
             kwargs["widget"] = ConditionsWidget(
                 condition_definitions=self.condition_definitions
             )
+        kwargs.setdefault("initial", {"all": []})  # Set default initial value
         super().__init__(*args, **kwargs)
 
     def clean(self, value):
-        """ Validate conditions by decoding result """
+        """Validate conditions by decoding result"""
         cleaned_json = super().clean(value)
         if cleaned_json is None:
             return
